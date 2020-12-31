@@ -10,6 +10,7 @@ use rand;
 use rand::Rng;
 use sha2::{Digest, Sha256, Sha512};
 use sha3::Keccak256;
+use std::io;
 
 const ADDRESS_VERSION: u8 = 1;
 const ADDRESS_LENGTH: usize = 26;
@@ -22,7 +23,7 @@ pub const TESTNET: u8 = 'T' as u8;
 pub const STAGENET: u8 = 'S' as u8;
 
 /// An account possessing a address.
-pub struct Address([u8; ADDRESS_LENGTH]);
+pub struct Address(pub [u8; ADDRESS_LENGTH]);
 
 impl Address {
     pub fn chain_id(&self) -> u8 {
@@ -64,6 +65,15 @@ impl PublicKeyAccount {
         let checksum = &secure_hash(&buf[..22])[..4];
         buf[22..].copy_from_slice(checksum);
         Address(buf)
+    }
+
+    pub fn from_slice(slice: &[u8]) -> io::Result<PublicKeyAccount> {
+        if slice.len() < PUBLIC_KEY_LENGTH {
+            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "invalid slice size"))
+        }
+        let mut buf = [0u8; PUBLIC_KEY_LENGTH];
+        buf.copy_from_slice(slice);
+        Ok(PublicKeyAccount(buf))
     }
 }
 
